@@ -11,20 +11,6 @@ import Video from '../components/Video'
 import List from '../components/List'
 import Account from '../components/Account'
 export default MainTab = createBottomTabNavigator ({
-    Video: {
-    screen: Video,
-    navigationOptions: ({navigation, screenProps}) => ({
-      header: null,
-      headerTitle: '首页',
-      headerStyle:styles.navigator,
-      headerTitleStyle:styles.navigatorTitle,
-      gesturesEnabled:true,
-      tabBarIcon: ({ focused, horizontal, tintColor }) => {
-        let iconName = `ios-home${focused ? '' : ''}`;
-        return <Ionicons name={iconName} size={horizontal ? 20 : 25} color={tintColor} />;
-      }
-    })
-  },
   List: {
     screen: List,
     navigationOptions: ({navigation, screenProps}) => ({
@@ -39,6 +25,21 @@ export default MainTab = createBottomTabNavigator ({
       }
     })
   },
+    Video: {
+    screen: Video,
+    navigationOptions: ({navigation, screenProps}) => ({
+      header: null,
+      headerTitle: '首页',
+      headerStyle:styles.navigator,
+      headerTitleStyle:styles.navigatorTitle,
+      gesturesEnabled:true,
+      tabBarIcon: ({ focused, horizontal, tintColor }) => {
+        let iconName = `ios-home${focused ? '' : ''}`;
+        return <Ionicons name={iconName} size={horizontal ? 20 : 25} color={tintColor} />;
+      }
+    })
+  },
+
   Account: {
     screen: Account,
     navigationOptions: ({navigation, screenProps}) => ({
