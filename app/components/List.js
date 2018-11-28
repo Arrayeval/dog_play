@@ -5,6 +5,7 @@ import FontIcon from 'react-native-vector-icons/FontAwesome'
 
 import httpReq from '../utils/Fetch'
 import ListUrl from '../service/ListUrl'
+import RequestData from '../utils/RequestData'
 const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
 
 
@@ -16,20 +17,34 @@ export default class List extends React.Component {
         }
     }
 
-    _getListData = (url) => {
-        httpReq({url})
+    _getListData = () => {
+        // httpReq({url})
+        RequestData.get(ListUrl.listArr)
+        .then(responseJson => {
+            this.setState({listData: responseJson.data})
+          return responseJson.movies;
+        })
+        .catch(error => {
+          console.error(error);
+        });
     }
+
+    _onPressItem = () => {
+
+    }
+
     _renderItem = ({item}) => (
         <ListItem
-          id={item.id}
+          id={item._id}
           thumb={item.thumb}
           onPressItem={this._onPressItem}
-          title={item.title}
         />
     )
 
-    componentWillMount () {
-        this._getListData(ListUrl.listArray)
+    _keyExtractor = (item, index) => index + ''
+
+    componentDidMount () {
+        this._getListData()
     }
 
     render () {
@@ -39,9 +54,9 @@ export default class List extends React.Component {
                     <Text style={styles.headerTitle}> 列表标题</Text>
                 </View>
                 <FlatList
-                data={[{id: 0, key: 'a',title:'222', thumb: 'https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=2953185871,498902071&fm=27&gp=0.jpg'},
-                 {id:2, key: 'b', title: '333', thumb:'https://ss2.bdstatic.com/70cFvnSh_Q1YnxGkpoWK1HF6hhy/it/u=2953185871,498902071&fm=27&gp=0.jpg'}]}
+                data={this.state.listData}
                 renderItem={this._renderItem}
+                keyExtractor={this._keyExtractor}
                 />
             </View>
         )

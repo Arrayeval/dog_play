@@ -9,6 +9,8 @@
   "dependencies": {
     "@react-navigation/core": "^3.0.0",
     "@react-navigation/native": "^3.0.1",
+    "lodash": "^4.17.11",
+    "query-string": "^6.2.0",
     "react": "16.6.1",
     "react-native": "0.57.5",
     "react-native-gesture-handler": "^1.0.9",
