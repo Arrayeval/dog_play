@@ -1,5 +1,5 @@
 import MainTab from './TabNavigator'
-// import NewsDetail from './pages/subPages/NewsDetail'
+import VideoDetail from '../components/subPage/VideoDetail'
 // import VideoDetail from './pages/subPages/VideoDetail'
 // import NewsSearch from './pages/subPages/NewsSearch'
 const RouteConfig = {
@@ -7,7 +7,11 @@ const RouteConfig = {
       screen: MainTab,
       navigationOptions: ({navigation}) => ({header: null, gesturesEnable: true})
   },
-//   NewsDetail: {
+  VideoDetail: {
+      screen: VideoDetail,
+      navigationOptions: ({navigation}) => ({header: null, gesturesEnable: true})
+  }
+  //   NewsDetail: {
 //       screen: NewsDetail,
 //       navigationOptions: ({navigation}) => ({header: null, gesturesEnable: true})
 //   },

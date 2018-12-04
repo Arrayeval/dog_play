@@ -134,9 +134,13 @@ android {
             }
         }
     }
+    compileOptions {
+     targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
+    compile project(':react-native-video')
     compile project(':react-native-gesture-handler')
     compile project(':react-native-vector-icons')
     implementation fileTree(dir: "libs", include: ["*.jar"])

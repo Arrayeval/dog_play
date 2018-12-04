@@ -1,5 +1,5 @@
 import React, {PureComponent} from 'react'
-import {View, Text, ImageBackground, StyleSheet, TouchableHighlight, FlatList, Dimensions} from 'react-native'
+import {View, Text, Image, ImageBackground, StyleSheet, TouchableOpacity, FlatList, Dimensions} from 'react-native'
 import Icon from 'react-native-vector-icons/Ionicons'
 import FontIcon from 'react-native-vector-icons/FontAwesome'
 
@@ -8,41 +8,135 @@ import ListUrl from '../service/ListUrl'
 import RequestData from '../utils/RequestData'
 const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
 
+var cacheResults = {
+    nextPage: 1,
+    items: [],
+    total: 0
+}
 
 export default class List extends React.Component {
     constructor (props) {
         super(props)
         this.state = {
-            listData: []
+            listData: [],
+            isLoadingTail: false,
+            nextPage: 1,
+            isRefreshing: false
         }
     }
 
-    _getListData = () => {
+    _getListData = (page=1) => {
+        if (page !== 0) {
+            this.setState({
+                isLoadingTail: true,
+                isRefreshing: false
+            })
+        }
+
         // httpReq({url})
-        RequestData.get(ListUrl.listArr)
-        .then(responseJson => {
-            this.setState({listData: responseJson.data})
-          return responseJson.movies;
+        RequestData.get(ListUrl.listArr, {
+            page: page,
+        })
+        .then(res => {
+            var that=this
+            if (res.success) {
+                var items = cacheResults.items.slice()
+                
+                if (page !== 0) {
+                    items = items.concat(res.data)
+                    cacheResults.nextPage += 1
+                } else {
+                    items = res.data.concat(items)
+                }
+                
+                items = items.concat(res.data)
+                cacheResults.items = items
+                cacheResults.total = res.total
+
+                setTimeout(function() {
+                    if (page !== 0) {
+                        that.setState({
+                            listData: cacheResults.items,
+                            isLoadingTail: false
+                        })
+                    } else {
+                        that.setState({
+                            listData: cacheResults.items,
+                            isRefreshing: false
+                        }) 
+                    }
+                },200)
+            }
         })
         .catch(error => {
-          console.error(error);
+
+           page !==0 ? this.setState({
+                isLoadingTail: false
+            }) : this.setState({isRefreshing: false})
+            console.error(error);
         });
     }
 
-    _onPressItem = () => {
-
+    _onPressItem = (item) => {
+        this.props.navigation.push('VideoDetail', {item})
     }
-
     _renderItem = ({item}) => (
         <ListItem
           id={item._id}
+          title={item.title}
           thumb={item.thumb}
-          onPressItem={this._onPressItem}
+          onPressItem={this._onPressItem.bind(this, item)}
         />
     )
 
     _keyExtractor = (item, index) => index + ''
 
+    _hasMore = () => {
+        return cacheResults.items.length !== cacheResults.total
+    }
+
+    _getMoreListData = () => {
+        // 没有更多数据 || 已经在加载中
+        if (!this._hasMore() || this.state.isLoadingTail) {
+            return
+        }
+        let page = cacheResults.page
+        this._getListData(page)
+    }
+
+    _renderRefresh = () => {
+        if (!this._hasMore() || this.state.isRefreshing) {
+            return 
+        }
+        this.setState({
+            isRefreshing: true
+        })
+        this._getListData(0)
+    }
+
+    _renderFooter = () => {
+        if (!this._hasMore() && cacheResults.total !== 0) {
+            return (
+                <View style={styles.loadingMore}>
+                    <Text style={styles.loadingText}>没有过更多了</Text>
+                </View>
+            )
+        }
+        return (
+            <View style={styles.loadingWrapper}> 
+                <Image source={require("../assets/images/loading.gif")} resizeMode={'contain'} 
+                    style={styles.loadingIcon} />
+                <Text style={{color:'#515151'}}>正在加载...</Text>
+            </View>
+        )
+    }
+    _emptyContent = () => {
+        return (
+            <View>
+                <Text>this is selfDemo</Text>
+            </View>
+        )
+    }
     componentDidMount () {
         this._getListData()
     }
@@ -54,9 +148,22 @@ export default class List extends React.Component {
                     <Text style={styles.headerTitle}> 列表标题</Text>
                 </View>
                 <FlatList
+                // 数据集合
                 data={this.state.listData}
+                // 渲染每条
                 renderItem={this._renderItem}
+                // key
                 keyExtractor={this._keyExtractor}
+                // 决定距离底部多远调用
+                onEndReachedThreshold={0.2}
+                // 当列表被滚动到距离内容最底部不足onEndReacchedThreshold设置的距离时调用此函数
+                onEndReached={this._getMoreListData}
+                ListFooterComponent={this._renderFooter}
+                // ListEmptyComponent={this._emptyContent}
+                refreshing={this.state.isRefreshing}
+                onRefresh={this._renderRefresh}
+                //初始加载的条数，不会被卸载
+                initialNumToRender={3}
                 />
             </View>
         )
@@ -64,12 +171,15 @@ export default class List extends React.Component {
 }
 
 class ListItem extends React.PureComponent {
+    constructor (props) {
+        super(props)
+    }
     _onPress = () => {
-        this.props.onPressItem(this.props.id)
+        this.props.onPressItem()
     }
     render () {
         return (
-            <TouchableHighlight onPress = {this._onPress}>
+            <TouchableOpacity  onPress = {this._onPress} activeOpacity={0.8}>
                 <View style={styles.item}>
                     <Text style={styles.title}>{this.props.title}</Text>
                     <ImageBackground  style={styles.thumb} source={{uri: this.props.thumb}}>
@@ -87,7 +197,7 @@ class ListItem extends React.PureComponent {
                         </View>
                     </View>
                 </View>
-            </TouchableHighlight>
+            </TouchableOpacity >
         )
     }
 }
@@ -165,5 +275,18 @@ const styles = StyleSheet.create({
     commentIcon:{
         fontSize:22,
         color:"#333"
+    },
+    loadingMore: {
+        marginVertical: 5
+    },
+    loadingText: {
+        color: '#777',
+        textAlign: 'center'
+    },
+    loadingWrapper:{
+        flexDirection:'row', justifyContent:'center', alignItems:'center', height:40
+    },
+    loadingIcon:{
+        width:20, height:20, marginRight: 5, height:40
     }
 })
