@@ -8,7 +8,9 @@ RequestData.get = function (url, params) {
     if (params) {
         url += '?' + queryString.stringify(params)
     }
-    return fetch (url) 
+    return fetch (url, {
+        mode: 'no-cors'
+    }) 
             .then((response) => response.json())
 }
 

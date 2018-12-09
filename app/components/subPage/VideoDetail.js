@@ -1,7 +1,9 @@
 import React, {PureComponent} from 'react'
-import {View, Text, TouchableOpacity,　Image, Dimensions} from 'react-native'
+import {View, Text, TouchableOpacity, ScrollView,　Image, Dimensions, FlatList} from 'react-native'
 import Icon from 'react-native-vector-icons/Ionicons'
 import Video from 'react-native-video'
+import RequestData from '../../utils/RequestData'
+import ListUrl from '../../service/ListUrl'
 const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
 
 export default class VideoDetail extends React.Component {
@@ -18,7 +20,8 @@ export default class VideoDetail extends React.Component {
             videoTotal: 0,         // 总时间   
             currentTime: 0,        // 当前时间
             playing: false,        // 正在播放
-            paused: false          // 暂停
+            paused: false,         // 暂停
+            comments: []
         }
     }
   
@@ -79,6 +82,43 @@ export default class VideoDetail extends React.Component {
         }
     }
 
+    _fetchData = () => {
+        let that = this
+        let url = ListUrl.comment
+        RequestData.get(url, {
+            creation: 123
+        }).then((data) => {
+            if (data.success && data) {
+                let comments = data.data
+                if (comments && comments.length > 0){
+                    that.setState({
+                        comments: comments
+                    })
+                }
+            }
+        }).catch(err => {
+            alert(JSON.stringify(err))
+            console.log(err)
+        })
+    }
+
+    _renderItem = (row) => (
+        <View key={row._id} style={styles.replayBox}>
+            <Image style={styles.replayAvatar} source={{uri:row.item.repayBy.avatar}}/>
+            <View style={styles.replay}>
+                <Text style={styles.replayNickname}>{row.item.repayBy.nickname}</Text>
+                <Text style={styles.replayComment}>{row.item.repayBy.comment}</Text>
+            </View>  
+        </View>
+    )
+    
+    _keyExtractor = (item, index) => index + ''
+    
+
+    componentDidMount () {
+        this._fetchData()
+    }
+
     render () {
         const { navigation } = this.props
         const item = navigation.getParam('item', 'NOItem');
@@ -91,6 +131,7 @@ export default class VideoDetail extends React.Component {
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{item.title}</Text>
                 </View>
+                {/*视频*/}
                 <View style={styles.videoBox}>
                     <Video ref="videoPlayer" 
                         style={styles.video}
@@ -139,6 +180,37 @@ export default class VideoDetail extends React.Component {
                         <View style={[styles.progressBar, {width: screenWidth * this.state.videoProgress}]}></View>
                     </View>
                 </View>
+                {/*评论区*/}
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    automaticallyAdjustContentInsets={false}
+                    style={styles.scrollView}>
+                    <View style={styles.infoBox}>
+                        <Image style={styles.avatar} source={{uri:item.author.avatar}}/>
+                        <View style={styles.descBox}>
+                            <Text style={styles.nickname}>{item.author.nickname}</Text>
+                            <Text style={styles.title}>{item.author.commend}</Text>
+                        </View>        
+                    </View>
+                    {/*评论区*/}
+                    <FlatList
+                        // 数据集合
+                        data={this.state.comments}
+                        // 渲染每条
+                        renderItem={this._renderItem}
+                        // key
+                        keyExtractor={this._keyExtractor}
+                        // 决定距离底部多远调用
+                        onEndReachedThreshold={0.2}
+                        // 当列表被滚动到距离内容最底部不足onEndReacchedThreshold设置的距离时调用此函数
+                        onEndReached={this._getMoreListData}
+                        ListFooterComponent={this._renderFooter}
+                        // ListEmptyComponent={this._emptyContent}
+                        refreshing={this.state.isRefreshing}
+                        //初始加载的条数，不会被卸载
+                        initialNumToRender={3}
+                        />
+                </ScrollView>
             </View>
          )
     }
@@ -265,5 +337,52 @@ const styles = {
         width: screenWidth,
         textAlign: 'center',
         color: '#fff'
+    },
+    infoBox:{
+        width: screenWidth,
+        flexDirection: 'row',
+        justofyContent: 'center',
+        marginTop:10
+    },
+    avatar:{
+        width:60,
+        height:60,
+        marginRight:10,
+        marginLeft:10,
+        borderRadius:30,
+        backgroundColor:'red'
+    },
+    descBox:{
+        flex:1
+    },
+    nickname:{
+        fontSize:18
+    },
+    title:{
+        marginTop:8,
+        fontSize:16,
+        color:'rgba(64,64,64,0.2)'
+    },
+    replayBox:{
+        flexDirection:'row',
+        justofyContent: 'flex-start',
+        marginTop:10
+    },
+    replayAvatar:{
+        width:40,
+        height:40,
+        marginRight:10,
+        marginLeft:10,
+        borderRadius:20,
+    },
+    replayNickname:{
+        color: '#666'
+    },
+    replayContent:{
+        marginTop:4,
+        color: '#666'
+    },
+    replay:{
+        flex:1
     }
 }

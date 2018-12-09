@@ -10,7 +10,7 @@ const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
 
 var cacheResults = {
     nextPage: 1,
-    items: [],
+    items: [], // 视频列表data
     total: 0
 }
 
