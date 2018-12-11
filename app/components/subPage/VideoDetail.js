@@ -5,7 +5,10 @@ import Video from 'react-native-video'
 import RequestData from '../../utils/RequestData'
 import ListUrl from '../../service/ListUrl'
 const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
-
+const tmpObj = {
+    contentArr: [],
+    total: 0
+}
 export default class VideoDetail extends React.Component {
     constructor (props) {
         super(props)
@@ -21,7 +24,8 @@ export default class VideoDetail extends React.Component {
             currentTime: 0,        // 当前时间
             playing: false,        // 正在播放
             paused: false,         // 暂停
-            comments: []
+            comments: [],
+            isLoadingTail: ''      // 用于控制加载“节流”
         }
     }
   
@@ -83,21 +87,32 @@ export default class VideoDetail extends React.Component {
     }
 
     _fetchData = () => {
+        this.setState({isLoadingTail: true})
         let that = this
         let url = ListUrl.comment
         RequestData.get(url, {
             creation: 123
-        }).then((data) => {
-            if (data.success && data) {
-                let comments = data.data
-                if (comments && comments.length > 0){
-                    that.setState({
-                        comments: comments
-                    })
-                }
+        }).then((res) => {
+            if (res.success && res) {
+                let comments = res.data
+                // tmpObj.total = res.total
+                setTimeout(()=>{
+                    this.setState({isLoadingTail: false})
+                    if (comments && comments.length > 0){
+                        if (res.total > tmpObj.contentArr.length) {
+                            let _arr = tmpObj.contentArr.concat(res.data)
+                            that.setState({
+                                comments: _arr
+                            })
+                        } else { //说明：数据已经加载完毕
+                            return 0
+                        }
+                    }
+                    tmpObj.contentArr = this.state.comments
+                }, 200)
             }
         }).catch(err => {
-            alert(JSON.stringify(err))
+            this.setState({isLoadingTail: false})
             console.log(err)
         })
     }
@@ -113,10 +128,34 @@ export default class VideoDetail extends React.Component {
     )
     
     _keyExtractor = (item, index) => index + ''
-    
+
+    _getMoreListData = () => {
+        this._fetchData()
+    }
 
     componentDidMount () {
         this._fetchData()
+    }
+
+    _hasMore = () => {
+        return tmpObj.contentArr.length !== tmpObj.total
+    }
+
+    _renderFooter = () => {
+        if (!this._hasMore() && tmpObj.total !== 0) {
+            return (
+                <View style={styles.loadingMore}>
+                    <Text style={styles.loadingText}>没有过更多了</Text>
+                </View>
+            )
+        }
+        return (
+            <View style={styles.loadingWrapperList}> 
+                <Image source={require("../../assets/images/loading.gif")} resizeMode={'contain'} 
+                    style={styles.loadingIcon} />
+                <Text style={{color:'#515151'}}>正在加载...</Text>
+            </View>
+        )
     }
 
     render () {
@@ -127,7 +166,7 @@ export default class VideoDetail extends React.Component {
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backWrapper}  onPress={() => this.props.navigation.navigate('List')}>
                         <Icon name="ios-arrow-back" size={30} style={styles.icon}></Icon>
-                        <Text style={styles.backText}>返回</Text>
+                        <Text style={styles.backText}>返回 </Text>
                     </TouchableOpacity>
                     <Text style={styles.headerTitle}>{item.title}</Text>
                 </View>
@@ -194,6 +233,7 @@ export default class VideoDetail extends React.Component {
                     </View>
                     {/*评论区*/}
                     <FlatList
+                        style={styles.listWrapper}
                         // 数据集合
                         data={this.state.comments}
                         // 渲染每条
@@ -206,7 +246,6 @@ export default class VideoDetail extends React.Component {
                         onEndReached={this._getMoreListData}
                         ListFooterComponent={this._renderFooter}
                         // ListEmptyComponent={this._emptyContent}
-                        refreshing={this.state.isRefreshing}
                         //初始加载的条数，不会被卸载
                         initialNumToRender={3}
                         />
@@ -384,5 +423,21 @@ const styles = {
     },
     replay:{
         flex:1
+    },
+    loadingMore: {
+        marginVertical: 5
+    },
+    loadingText: {
+        color: '#777',
+        textAlign: 'center'
+    },
+    loadingWrapperList:{
+        flexDirection:'row', justifyContent:'center', alignItems:'center', height:40
+    },
+    loadingIcon:{
+        width:20, height:20, marginRight: 5, height:40
+    },
+    listWrapper:{
+        paddingBottom:100
     }
 }

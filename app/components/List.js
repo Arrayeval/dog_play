@@ -41,7 +41,6 @@ export default class List extends React.Component {
             var that=this
             if (res.success) {
                 var items = cacheResults.items.slice()
-                
                 if (page !== 0) {
                     items = items.concat(res.data)
                     cacheResults.nextPage += 1
@@ -49,7 +48,7 @@ export default class List extends React.Component {
                     items = res.data.concat(items)
                 }
                 
-                items = items.concat(res.data)
+                // items = items.concat(res.data)
                 cacheResults.items = items
                 cacheResults.total = res.total
 
@@ -69,7 +68,6 @@ export default class List extends React.Component {
             }
         })
         .catch(error => {
-
            page !==0 ? this.setState({
                 isLoadingTail: false
             }) : this.setState({isRefreshing: false})
@@ -145,7 +143,7 @@ export default class List extends React.Component {
         return (
             <View style = {styles.container}> 
                 <View style={styles.header}>
-                    <Text style={styles.headerTitle}> 列表标题</Text>
+                    <Text style={styles.headerTitle}>列表标题</Text>
                 </View>
                 <FlatList
                 // 数据集合
