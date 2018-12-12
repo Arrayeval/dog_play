@@ -44,11 +44,11 @@ export default class List extends React.Component {
                 if (page !== 0) {
                     items = items.concat(res.data)
                     cacheResults.nextPage += 1
-                } else {
+                } else { 
                     items = res.data.concat(items)
                 }
                 
-                // items = items.concat(res.data)
+                items = items.concat(res.data)
                 cacheResults.items = items
                 cacheResults.total = res.total
 

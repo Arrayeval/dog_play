@@ -7,7 +7,8 @@ import ListUrl from '../../service/ListUrl'
 const {width: screenWidth, height: screenHeight} =  Dimensions.get('window')
 const tmpObj = {
     contentArr: [],
-    total: 0
+    total: 0,
+    nextPage: 0
 }
 export default class VideoDetail extends React.Component {
     constructor (props) {
@@ -86,30 +87,28 @@ export default class VideoDetail extends React.Component {
         }
     }
 
-    _fetchData = () => {
+    _fetchData = (page = 1) => {
         this.setState({isLoadingTail: true})
-        let that = this
         let url = ListUrl.comment
         RequestData.get(url, {
             creation: 123
         }).then((res) => {
             if (res.success && res) {
-                let comments = res.data
-                // tmpObj.total = res.total
+                var items = tmpObj.contentArr.slice()
+                if (page !== 0) {
+                    items = items.concat(res.data)
+                    tmpObj.nextPage += 1
+                } else { 
+                    items = res.data.concat(items)
+                }
+                tmpObj.contentArr = items
+                tmpObj.total = res.total
                 setTimeout(()=>{
-                    this.setState({isLoadingTail: false})
-                    if (comments && comments.length > 0){
-                        if (res.total > tmpObj.contentArr.length) {
-                            let _arr = tmpObj.contentArr.concat(res.data)
-                            that.setState({
-                                comments: _arr
-                            })
-                        } else { //说明：数据已经加载完毕
-                            return 0
-                        }
-                    }
-                    tmpObj.contentArr = this.state.comments
-                }, 200)
+                    this.setState({
+                        isLoadingTail: false,
+                        comments: tmpObj.contentArr
+                    })
+                },200)
             }
         }).catch(err => {
             this.setState({isLoadingTail: false})
@@ -130,11 +129,16 @@ export default class VideoDetail extends React.Component {
     _keyExtractor = (item, index) => index + ''
 
     _getMoreListData = () => {
-        this._fetchData()
+        // 没有更多数据 || 已经在加载中
+        if (!this._hasMore() || this.state.isLoadingTail) {
+            return
+        }
+        let page = tmpObj.nextPage
+        this._fetchData(page)
     }
 
     componentDidMount () {
-        this._fetchData()
+        this._fetchData(0)
     }
 
     _hasMore = () => {
